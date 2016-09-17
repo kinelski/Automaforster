@@ -23,12 +23,12 @@ public class Auto {
 		auto = new ArrayList[MAX_STATE][MAX_STATE];
 		finalStates = new TreeSet<Integer>();
 		
-		for(int i = 0; i < 100; i++)
-			for(int j = 0; j < 100; j++)
+		for(int i = 0; i < MAX_STATE; i++)
+			for(int j = 0; j < MAX_STATE; j++)
 				auto[i][j] = new ArrayList<String>();
 	}
 	
-	private void addEdge (int s1, int s2, String w){
+	public void addEdge (int s1, int s2, String w){
 		auto[s1][s2].add(w);
 	}
 	
@@ -89,7 +89,18 @@ public class Auto {
 
 	//ITEM 2 ----------------------------------------------
 	
-	private void getOutput (String chain, Set<Integer> statesSet, int state){
+	private void getOutput (String chain, Set<Integer> statesSet, int state, boolean[][] epsFlag){
+		epsFlag[state][chain.length()] = true;
+		
+		for (int i=0; i<num_states; i++){
+			ArrayList<String> edgesList = auto[state][i];
+			
+			for (String edge : edgesList){
+				if (edge.charAt(0) == '&' && !epsFlag[i][chain.length()])
+					getOutput (chain, statesSet, i, epsFlag);
+			}
+		}
+		
 		if (chain.length() == 0){
 			statesSet.add(state);
 			return;
@@ -100,12 +111,10 @@ public class Auto {
 		
 		for (int i=0; i<num_states; i++){
 			ArrayList<String> edgesList = auto[state][i];
-			if (edgesList == null)
-				continue;
 			
 			for (String edge : edgesList){
-				if (symbol == edge.charAt(0))
-					getOutput (newChain, statesSet, i);
+				if (edge.charAt(0) == symbol)
+					getOutput (newChain, statesSet, i, epsFlag);
 			}
 		}
 	}
@@ -114,7 +123,12 @@ public class Auto {
 		if (!onlySymbol)
 			return false;
 		
-		getOutput (chain, statesSet, startState);
+		boolean[][] epsFlag = new boolean[num_states][chain.length()+1];
+		for (int i=0; i<num_states; i++)
+			for (int j=0; j<chain.length(); j++)
+				epsFlag[i][j] = false;
+		
+		getOutput (chain, statesSet, startState, epsFlag);
 		Set<Integer> intersection = new TreeSet<Integer>(statesSet);
 		intersection.retainAll(finalStates);
 		
