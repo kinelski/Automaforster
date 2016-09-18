@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
 
 public class Auto {
@@ -18,14 +19,32 @@ public class Auto {
 	private boolean isAFD = false;
 	private boolean noEps = false;
 	private boolean onlySymbol = false;
+	
+	private Stack<Integer> vertex;
+	private Stack<Integer> vertexIni;
+	private boolean isUsed[];
 
 	public Auto(){
+		isUsed = new boolean[MAX_STATE];
 		auto = new ArrayList[MAX_STATE][MAX_STATE];
 		finalStates = new TreeSet<Integer>();
 		
-		for(int i = 0; i < MAX_STATE; i++)
+		for(int i = 0; i < MAX_STATE; i++){
+			isUsed[i] = false;
 			for(int j = 0; j < MAX_STATE; j++)
 				auto[i][j] = new ArrayList<String>();
+		}
+		
+		ini = 0;
+		fim = 1;
+		
+		isUsed[ini] = true;
+		isUsed[fim] = true;
+		
+		vertexIni = new Stack<Integer>();
+		vertex = new Stack<Integer>();
+		
+		
 	}
 	
 	public void addEdge (int s1, int s2, String w){
@@ -38,44 +57,100 @@ public class Auto {
 		ini = 0;
 		fim = 1;
 		
-		auto[0][1].add(regex);
-		
+		//vertexIni.push(auxini);
+		//vertexFim.push(auxfim);
+		addEdge(0,1,regex);
+		processaRegex(regex, 0);
 	}
 	
-	public void processaRegex(String substring){
+	public void processaRegex(String substring, int op){
 		String a,b;
 		
-		if(substring.length() == 1)
-			return;
+		int auxfim;
+		int auxini;
 		
+		
+		/*if(substring.length() == 1 || (substring.length() == 2 && op == 3)){
+			switch(op){
+				//Union
+				case 1:
+					addEdge(auxini,auxfim, substring);
+					//auto[auxini][auxfim].add(substring);
+					break;
+				//Concatenation
+				case 2:
+					auxfim++;
+					
+					auto[auxini][auxfim].add(substring);
+					auxfim++;
+				
+				return;
+			}
+		}
+		*/
+		
+		if(substring.length() == 1){
+			int i = getIndex();
+			setUsed(i);
+			int j = getIndex();
+			setUsed(j);
+			addEdge(i,j,substring);
+			vertex.push(j);
+			vertex.push(i);
+			return;
+		}
 		
 		if(isUnion(substring)){
+			op = 1;
 			//Quebra a string onde ha o +
 			int plus = getUnionPos(substring);
 			a = substring.substring(0, plus);
 			b = substring.substring(plus+1, substring.length());
 			
 			//Altera Matriz
-			auto[ini][fim].add(a);
-			auto[ini][fim].add(b);
+			//auto[auxini][auxfim].add(a);
+			//auto[auxini][auxfim].add(b);
 			
-			this.processaRegex(a);
-			this.processaRegex(b);
+			//vertexIni.push(auxini);
+			//vertexFim.push(auxfim);
+			this.processaRegex(a, 1);
+			int aIni = vertex.pop();
+			int aFim = vertex.pop();
+			this.processaRegex(b, 1);
+			int bIni = vertex.pop();
+			int bFim = vertex.pop();
+			
+			auxini = getIndex();
+			setUsed(auxini);
+			auxfim = getIndex();
+			setUsed(auxfim);
+			
+			addEdge(auxini, aIni, "&");
+			addEdge(auxini, bIni, "&");
+			addEdge(aFim, auxfim, "&");
+			addEdge(bFim, auxfim, "&");
+			
+			vertex.push(auxfim);
+			vertex.push(auxini);
+			
+			
 		}
 		else{
 			if(isStar(substring)){
+				op = 3;
 				//Altera a matriz para o fecho de Kleene
 				if(substring.length() == 2){}
-					
+					processaRegex(substring, op);
 					//Alterar a matriz
 				
 				if(substring.length() > 2){
 					a = substring.substring(1, substring.length()-2);
-					processaRegex(a);
+					processaRegex(a, op);
 				}
 			}
 			else{
 				//Altera a matriz para o caso de concatenação
+				op = 2;
 				int counter = 0;
 				int abre = 0, fecha = 0;
 				char aux;
@@ -93,23 +168,30 @@ public class Auto {
 							fecha = i;
 					}
 					if(substring.charAt(i) == ')' && counter == 0){
+						//Parenteses com estrela
 						if(substring.charAt(i+1) == '*'){
 							a = substring.substring(abre, fecha+2);
-							processaRegex(a);
+							b = substring.substring(abre+2, substring.length());
+							processaRegex(a, op);
+							processaRegex(b, op);
 							i = i+1; //Passar pela posição do asterisco
 						}
+						//Parenteses comuns
 						else{
 							a = substring.substring(abre, fecha+1);
-							processaRegex(a);
+							processaRegex(a, op);
 						}
 					}
 					else{
-						if(substring.charAt(i+1) == '*'){
+						//letra com estrela
+						if(i + 1 != substring.length() && substring.charAt(i+1) == '*'){
 							a = substring.substring(i, i+2);
-							processaRegex(a);
+							processaRegex(a, op);
 						}
+						//somente letra
 						else{
-							
+							a = substring.substring(i,i+1);
+							processaRegex(a, 2);
 							//Altera a matriz
 							
 						}
@@ -192,7 +274,19 @@ public class Auto {
 			
 		return false;
 	}
-
+	
+	public int getIndex(){
+		for(int i = 0; i < MAX_STATE;i++){
+			if(!isUsed[i]){
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	public void setUsed(int index){
+		isUsed[index] = true;
+	}
 	//ITEM 2 ----------------------------------------------
 	
 	private void getOutput (String chain, Set<Integer> statesSet, int state, boolean[][] epsFlag){

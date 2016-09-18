@@ -41,8 +41,9 @@ public class AutoTest {
 	}
 	@Test
 	public void processaRegex() {
-		regex = "(a+b)*b*b(b+a)*";
-		auto.processaRegex(regex);
+		//regex = "ab+(b+c)*";
+		regex = "a+b+c+d";
+		auto.processaRegex(regex,0);
 	}
 	
 
