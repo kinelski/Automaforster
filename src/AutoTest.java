@@ -42,8 +42,11 @@ public class AutoTest {
 	@Test
 	public void processaRegex() {
 		//regex = "ab+(b+c)*";
-		regex = "a+b+c+d";
+		//regex = "a(b+c)d";
+		//regex = "a(a+c)*";
+		regex = "(a+b)*bb(b+a)*";
 		auto.processaRegex(regex,0);
+		auto.generateGraphFile();
 	}
 	
 
