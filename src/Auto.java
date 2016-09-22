@@ -388,6 +388,7 @@ public class Auto {
 		return -1;
 	}
 	
+	//Marca o valor de estado como utilizado
 	public void setUsed(int index){
 		isUsed[index] = true;
 	}
