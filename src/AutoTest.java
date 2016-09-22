@@ -43,10 +43,15 @@ public class AutoTest {
 	public void processaRegex() {
 		//regex = "ab+(b+c)*";
 		//regex = "a(b+c)d";
-		//regex = "a(a+c)*";
-		regex = "(a+b)*bb(b+a)*";
-		auto.processaRegex(regex,0);
-		auto.generateGraphFile();
+		//regex = "(a(b+c))*";
+		//regex = "b*";
+		//regex = "(a+b)*bb(b+a)*";
+		//regex = "a*b+b*a";
+		regex = "a*b*c*";
+		//auto.processaRegex(regex,0);
+		//auto.generateGraphFile();
+		
+		auto.createNFAFromRE(regex);
 	}
 	
 

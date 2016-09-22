@@ -55,6 +55,10 @@ public class Auto {
 		auto[s1][s2].add(w);
 	}
 	
+	public void addEdge (int s1, int s2, ArrayList<String> weights){
+		auto[s1][s2] = weights;
+	}
+	
 	public void removeEdge (int s1, int s2, String w){
 		auto[s1][s2].remove(w);
 	}
@@ -63,8 +67,19 @@ public class Auto {
 		return !auto[s1][s2].isEmpty();
 	}
 	
+	
 	public ArrayList<String> getWeights(int s1, int s2){
 		return auto[s1][s2];
+	}
+	
+	private void copyWeights(int from, int to){
+		//Deep Copy dos elementos
+		for(int i = 0; i < MAX_STATE; i++){
+			for(int j = 0; j < auto[from][i].size(); j++){
+				auto[to][i].add(auto[from][i].get(j));
+			}
+			auto[from][i] = new ArrayList<String>();
+		}
 	}
 	
 	//ITEM 1 ----------------------------------------------
@@ -85,6 +100,10 @@ public class Auto {
 		addEdge(ini, grafoIni, "&");
 		addEdge(grafoFim, fim, "&");
 		
+		auto[ini][fim] = new ArrayList<String>();
+		
+		generateGraphFile();
+		
 	}
 	
 	public void processaRegex(String substring, int op){
@@ -104,27 +123,139 @@ public class Auto {
 			vertex.push(i);
 			return;
 		}
+		if (hasParenthesis(substring)){
+			a = substring.substring(1, substring.length() - 1);
+			processaRegex(a, 0);
+		}
+		else{
+			if(isUnion(substring)){
+				op = 1;
+				//Quebra a string onde ha o +
+				int plus = getUnionPos(substring);
+				a = substring.substring(0, plus);
+				b = substring.substring(plus+1, substring.length());
+				
+				processaUnion(a,b);
+			}
+			else{
+				if(isStar(substring)){
+					op = 3;
+					//Altera a matriz para o fecho de Kleene
+					if(substring.length() == 2){
+						a = substring.substring(0,1);
+						processaStar(a);
+					}
+						
+					
+					if(substring.length() > 2){
+						a = substring.substring(1, substring.length()-2);
+						processaStar(a);
+					}
+					
+				}
+				else{
+					//Altera a matriz para o caso de concatenação
+					op = 2;
+					int counter = 0;
+					int abre = -1, fecha = -1;
+					char aux;
+					ArrayList<String> weights = new ArrayList<String>();
+					
+					for(int i = 0; i < substring.length(); i++){
+						aux = substring.charAt(i);
+						if(aux == '('){
+							if(counter == 0)
+								abre = i;
+							counter++;
+						}
+						if(aux == ')'){
+							counter--;
+							if(counter == 0)
+								fecha = i;
+						}
+						if(abre >= 0){
+							if(substring.charAt(i) == ')' && counter == 0){
+								//Parenteses com estrela
+								if(substring.length() != i + 1 && substring.charAt(i+1) == '*'){
+									a = substring.substring(abre, fecha+2);
+									b = substring.substring(fecha+2, substring.length());
+									
+									processaCat(a,b);
+									
+									break;
+									//i = i+1; //Passar pela posição do asterisco
+								}
+								//Parenteses comuns
+								else{
+									a = substring.substring(abre+1, fecha);
+									b = substring.substring(fecha+1, substring.length());
+									
+									processaCat(a,b);
+									
+									break;
+								}
+								
+							}
+						}
+						else{
+							//letra com estrela
+							if(i + 1 != substring.length() && substring.charAt(i+1) == '*'){
+								a = substring.substring(i, i+2);
+								b = substring.substring(i+2, substring.length());
+	
+								processaCat(a,b);
+								
+								break;
+							}
+							//somente letra
+							else{
+								a = substring.substring(i,i+1);
+								b = substring.substring(i+1,substring.length());
+	
+								processaCat(a,b);
+								
+								break;
+								//Altera a matriz
+								
+							}
+							
+						}
+							
+					}
+					
+				}
+			}
+		}
 		
-		if(isUnion(substring)){
-			op = 1;
-			//Quebra a string onde ha o +
-			int plus = getUnionPos(substring);
-			a = substring.substring(0, plus);
-			b = substring.substring(plus+1, substring.length());
+	}
+	
+	private void processaUnion(String a, String b){
+		int aIni, aFim, bIni, bFim, auxini, auxfim;
+		int op = 1;
+		
+		this.processaRegex(a, op);
+		aIni = vertex.pop();
+		aFim = vertex.pop();
+		this.processaRegex(b, op);
+		bIni = vertex.pop();
+		bFim = vertex.pop();
+		
+		auxini = getIndex();
+		setUsed(auxini);
+		auxfim = getIndex();
+		setUsed(auxfim);
+		
+		if(auto[aIni][aFim].size() == 1 && auto[bIni][bFim].size() == 1){ 
+			auto[aIni][aFim].add(auto[aIni][aFim].get(0) + ","+ auto[bIni][bFim].get(0));
 			
-			//Altera Matriz
-			this.processaRegex(a, op);
-			aIni = vertex.pop();
-			aFim = vertex.pop();
-			this.processaRegex(b, op);
-			bIni = vertex.pop();
-			bFim = vertex.pop();
+			auto[aIni][aFim].remove(0);
 			
-			auxini = getIndex();
-			setUsed(auxini);
-			auxfim = getIndex();
-			setUsed(auxfim);
-			
+			auto[bIni][bFim] = new ArrayList<String>();
+			vertex.push(aFim);
+			vertex.push(aIni);
+		}
+		else{
+		
 			addEdge(auxini, aIni, "&");
 			addEdge(auxini, bIni, "&");
 			addEdge(aFim, auxfim, "&");
@@ -132,184 +263,61 @@ public class Auto {
 			
 			vertex.push(auxfim);
 			vertex.push(auxini);
-			
-			
-		}
-		else{
-			if(isStar(substring)){
-				op = 3;
-				//Altera a matriz para o fecho de Kleene
-				if(substring.length() == 2){
-					a = substring.substring(0,1);
-					
-					processaRegex(a, op);
-					aIni = vertex.pop();
-					aFim = vertex.pop();
-			
-					auxini = getIndex();
-					setUsed(auxini);
-					auxfim = getIndex();
-					setUsed(auxfim);
-					
-					addEdge(auxini, aIni, "&");
-					addEdge(aFim, auxfim, "&");
-					
-					vertex.push(auxfim);
-					vertex.push(auxini);
-				}
-					
-					//Alterar a matriz
-				
-				if(substring.length() > 2){
-					a = substring.substring(1, substring.length()-2);
-					processaRegex(a, op);
-					
-					aIni = vertex.pop();
-					aFim = vertex.pop();
-			
-					auxini = getIndex();
-					setUsed(auxini);
-					auxfim = getIndex();
-					setUsed(auxfim);
-					
-					addEdge(auxini, aIni, "&");
-					addEdge(aFim, auxfim, "&");
-					
-					vertex.push(auxfim);
-					vertex.push(auxini);
-				}
-			}
-			else{
-				//Altera a matriz para o caso de concatenação
-				op = 2;
-				int counter = 0;
-				int abre = -1, fecha = -1;
-				char aux;
-				
-				for(int i = 0; i < substring.length(); i++){
-					aux = substring.charAt(i);
-					if(aux == '('){
-						if(counter == 0)
-							abre = i;
-						counter++;
-					}
-					if(aux == ')'){
-						counter--;
-						if(counter == 0)
-							fecha = i;
-					}
-					if(abre >= 0){
-						if(substring.charAt(i) == ')' && counter == 0){
-							//Parenteses com estrela
-							if(substring.charAt(i+1) == '*'){
-								a = substring.substring(abre, fecha+2);
-								b = substring.substring(fecha+2, substring.length());
-								
-								processaRegex(a, op);
-								aIni = vertex.pop();
-								aFim = vertex.pop();
-								processaRegex(b, op);
-								bIni = vertex.pop();
-								bFim = vertex.pop();
-								
-								
-								//addEdge(aFim, bFim, b);
-								//removeEdge(bIni,bFim,b);
-								
-								
-								vertex.push(bFim);
-								vertex.push(aIni);
-								
-								
-								break;
-								//i = i+1; //Passar pela posição do asterisco
-							}
-							//Parenteses comuns
-							else{
-								a = substring.substring(abre+1, fecha);
-								b = substring.substring(fecha+1, substring.length());
-								
-								processaRegex(a, op);
-								aIni = vertex.pop();
-								aFim = vertex.pop();
-								processaRegex(b, op);
-								bIni = vertex.pop();
-								bFim = vertex.pop();
-								
-								addEdge(aFim, bFim, b);
-								removeEdge(bIni,bFim,b);
-								
-								vertex.push(bFim);
-								vertex.push(aIni);
-								
-								break;
-							}
-							
-						}
-					}
-					else{
-						//letra com estrela
-						if(i + 1 != substring.length() && substring.charAt(i+1) == '*'){
-							a = substring.substring(i, i+2);
-							b = substring.substring(i+2, substring.length());
-
-							processaRegex(a, op);
-							aIni = vertex.pop();
-							aFim = vertex.pop();
-							processaRegex(b, op);
-							bIni = vertex.pop();
-							bFim = vertex.pop();
-							
-							addEdge(aFim, bFim, b);
-							removeEdge(bIni,bFim,b);
-							
-							vertex.push(bFim);
-							vertex.push(aIni);
-							
-							break;
-						}
-						//somente letra
-						else{
-							a = substring.substring(i,i+1);
-							b = substring.substring(i+1,substring.length());
-
-							processaRegex(a, op);
-							aIni = vertex.pop();
-							aFim = vertex.pop();
-							processaRegex(b, op);
-							bIni = vertex.pop();
-							bFim = vertex.pop();
-							
-							addEdge(aFim, bFim, b);
-							removeEdge(bIni,bFim,b);
-							
-							vertex.push(bFim);
-							vertex.push(aIni);
-							
-							break;
-							//Altera a matriz
-							
-						}
-						
-					}
-						
-				}
-				
-			}
 		}
 		
-	}
-	
-	private void processaUnion(String regex){
 		
 	}
 	
-	private void processaCat(String regex){
+	private void processaCat(String a, String b){
+		int aIni, aFim, bIni, bFim;
+		int op = 2;
+		
+		processaRegex(a, op);
+		aIni = vertex.pop();
+		aFim = vertex.pop();
+		processaRegex(b, op);
+		bIni = vertex.pop();
+		bFim = vertex.pop();
+		
+		copyWeights(bIni, aFim);
+		
+		//addEdge(aFim, bFim, b);
+		//removeEdge(bIni,bFim,b);
+		
+		vertex.push(bFim);
+		vertex.push(aIni);
 		
 	}
 	
-	private void processaStar(String regex){
+	private void processaStar(String a){
+		int aIni, aFim, auxini, auxfim;
+		int op = 2;
+		processaRegex(a, op);
+		aIni = vertex.pop();
+		aFim = vertex.pop();
+
+		auxini = getIndex();
+		setUsed(auxini);
+		auxfim = getIndex();
+		setUsed(auxfim);
 		
+		for(int i = 0; i < MAX_STATE; i++){
+			for(int j = 0; j < auto[i][aFim].size(); j++){
+				if(auto[i][aFim].size() != 0)
+					auto[i][aIni].add(auto[i][aFim].get(j));
+			}
+			auto[i][aFim] = new ArrayList<String>();
+		}
+		
+		addEdge(auxini, aIni, "&");
+		addEdge(aIni, auxfim, "&");
+		
+		vertex.push(auxfim);
+		vertex.push(auxini);
+	}
+	
+	public boolean hasParenthesis(String substring){
+		return substring.charAt(0) == '(' && substring.charAt(substring.length()-1) == ')'; 
 	}
 	
 	public boolean isUnion(String substring){
