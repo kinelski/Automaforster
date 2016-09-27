@@ -49,7 +49,11 @@ public class Auto {
 		vertexIni = new Stack<Integer>();
 		vertex = new Stack<Integer>();
 		
-		
+		//TESTES
+		num_states = 4;
+		startState = 0;
+		finalStates.add(3);
+		//------
 	}
 	
 	public void addEdge (int s1, int s2, String w){
@@ -70,7 +74,6 @@ public class Auto {
 	public boolean hasConnection(int s1, int s2){
 		return !auto[s1][s2].isEmpty();
 	}
-	
 	
 	public ArrayList<String> getWeights(int s1, int s2){
 		return auto[s1][s2];
@@ -267,9 +270,7 @@ public class Auto {
 			
 			vertex.push(auxfim);
 			vertex.push(auxini);
-		}
-		
-		
+		}	
 	}
 	
 	private void processaCat(String a, String b){
@@ -290,7 +291,6 @@ public class Auto {
 		
 		vertex.push(bFim);
 		vertex.push(aIni);
-		
 	}
 	
 	private void processaStar(String a){
@@ -421,9 +421,8 @@ public class Auto {
 			out.println("}");
 			out.close();
 		}catch(Exception e){}
-		
-		
 	}
+	
 	//ITEM 2 ----------------------------------------------
 	
 	private void getOutput (String chain, Set<Integer> statesSet, int state, boolean[][] epsFlag){
@@ -472,6 +471,8 @@ public class Auto {
 		return !intersection.isEmpty();
 	}
 	
+	//ITEM 3 ----------------------------------------------
+	
 	public void removeEps () {
 		boolean[][] closure = new boolean[num_states][num_states];
 		
@@ -510,7 +511,6 @@ public class Auto {
 			} //for A
 		} //for X
 		
-		
 		//passo III
 		System.out.println("Passo III");
 		for (int X = 0; X < num_states; X++) {
@@ -528,7 +528,6 @@ public class Auto {
 				} //if
 			} //for Y
 		} //for X
-		
 		
 		//passo IV
 		System.out.println("Passo IV");
@@ -566,5 +565,127 @@ public class Auto {
 		for(int i = 0; i < num_states; i++)
 			closure[i][i] = false;
 	} //closureOf
+	
+	//ITEM 4 ----------------------------------------------
+	
+	private String union (String s1, String s2){
+		if (s1.length() > 1)
+			s1 = "(" + s1 + ")";
+		if (s2.length() > 1)
+			s2 = "(" + s2 + ")";
+		
+		return s1 + "+" + s2;
+	}
+	
+	private String concat (String s1, String s2){
+		if (s1.length() > 1)
+			s1 = "(" + s1 + ")";
+		if (s2.length() > 1)
+			s2 = "(" + s2 + ")";
+		
+		return s1 + s2;
+	}
+	
+	private String kleene (String s){
+		if (s.length() > 1)
+			s = "(" + s + ")";
+		
+		return s + "*";
+	}
+	
+	private void generateUnionEdges(){
+		for (int i=0; i<num_states; i++){
+			for (int j=0; j<num_states; j++){
+				
+				ArrayList<String> edgesList = auto[i][j];
+				
+				if (edgesList.size() > 1){
+					String newEdgeRegex = "";
+					for (String edge : edgesList)
+						newEdgeRegex = union(newEdgeRegex, edge);
+					
+					edgesList.clear();
+					edgesList.add(newEdgeRegex);
+				}
+				
+			}
+		}
+	}
+	
+	private void removeState (int state){
+		String selfLoopRegex = "";
+		
+		ArrayList<String> stateList = auto[state][state];
+		if (stateList.size() > 0)
+			selfLoopRegex = kleene(stateList.get(0));
+		
+		for (int from=0; from<num_states; from++){
+			if (from == state) continue;
+			
+			ArrayList<String> fromStateList = auto[from][state];
+			if (fromStateList.isEmpty()) continue;
+			
+			String fromStateRegex = fromStateList.get(0);
+			
+			for (int to=0; to<num_states; to++){
+				if (to == state) continue;
+				
+				ArrayList<String> stateToList = auto[state][to];
+				if (stateToList.isEmpty()) continue;
+				
+				String stateToRegex = stateToList.get(0);
+				
+				String newEdgeRegex = concat(fromStateRegex, selfLoopRegex);
+				newEdgeRegex = concat(newEdgeRegex, stateToRegex);
+				
+				ArrayList<String> fromToList = auto[from][to];
+				if (fromToList.size() > 0){
+					String fromToRegex = fromToList.get(0);
+					newEdgeRegex = union(newEdgeRegex, fromToRegex);
+					fromToList.clear();
+				}
+				
+				fromToList.add(newEdgeRegex);
+			}
+		}
+		
+		for (int i=0; i<num_states; i++){
+			auto[i][state].clear();
+			auto[state][i].clear();
+		}
+	}
+	
+	public String getRegex(){
+		//CHAMAR FUNCAO DE REMOVER OS EPS!
+		generateUnionEdges();
+		
+		for (int i=0; i<num_states; i++){
+			if (i != startState && !finalStates.contains(i)){
+				removeState(i);
+				print();
+				System.out.println("");
+			}
+		}
+		
+		return "";
+	}
+	
+	//DEBUG ----------------------------------------------
+	
+	public void print(){
+		for (int i=0; i<num_states; i++){
+			System.out.print(i + ":");
+			for (int j=0; j<num_states; j++){
+				if (auto[i][j].size() == 0) continue;
+				
+				System.out.print(" " + j + "[");
+				for (String s : auto[i][j])
+					System.out.print(s + "-");
+				System.out.print("]");
+			}
+			
+			System.out.println("");
+		}
+	}
 	
 }
