@@ -26,6 +26,12 @@ public class Auto {
 		for(int i = 0; i < MAX_STATE; i++)
 			for(int j = 0; j < MAX_STATE; j++)
 				auto[i][j] = new ArrayList<String>();
+		
+		//TESTES
+		num_states = 4;
+		startState = 0;
+		finalStates.add(3);
+		//------
 	}
 	
 	public void addEdge (int s1, int s2, String w){
@@ -133,6 +139,126 @@ public class Auto {
 		intersection.retainAll(finalStates);
 		
 		return !intersection.isEmpty();
+	}
+	
+	//ITEM 4 ----------------------------------------------
+	
+	private String union (String s1, String s2){
+		if (s1.length() > 1)
+			s1 = "(" + s1 + ")";
+		if (s2.length() > 1)
+			s2 = "(" + s2 + ")";
+		
+		return s1 + "+" + s2;
+	}
+	
+	private String concat (String s1, String s2){
+		if (s1.length() > 1)
+			s1 = "(" + s1 + ")";
+		if (s2.length() > 1)
+			s2 = "(" + s2 + ")";
+		
+		return s1 + s2;
+	}
+	
+	private String kleene (String s){
+		if (s.length() > 1)
+			s = "(" + s + ")";
+		
+		return s + "*";
+	}
+	
+	private void generateUnionEdges(){
+		for (int i=0; i<num_states; i++){
+			for (int j=0; j<num_states; j++){
+				
+				ArrayList<String> edgesList = auto[i][j];
+				
+				if (edgesList.size() > 1){
+					String newEdgeRegex = "";
+					for (String edge : edgesList)
+						newEdgeRegex = union(newEdgeRegex, edge);
+					
+					edgesList.clear();
+					edgesList.add(newEdgeRegex);
+				}
+				
+			}
+		}
+	}
+	
+	private void removeState (int state){
+		String selfLoopRegex = "";
+		
+		ArrayList<String> stateList = auto[state][state];
+		if (stateList.size() > 0)
+			selfLoopRegex = kleene(stateList.get(0));
+		
+		for (int from=0; from<num_states; from++){
+			if (from == state) continue;
+			
+			ArrayList<String> fromStateList = auto[from][state];
+			if (fromStateList.isEmpty()) continue;
+			
+			String fromStateRegex = fromStateList.get(0);
+			
+			for (int to=0; to<num_states; to++){
+				if (to == state) continue;
+				
+				ArrayList<String> stateToList = auto[state][to];
+				if (stateToList.isEmpty()) continue;
+				
+				String stateToRegex = stateToList.get(0);
+				
+				String newEdgeRegex = concat(fromStateRegex, selfLoopRegex);
+				newEdgeRegex = concat(newEdgeRegex, stateToRegex);
+				
+				ArrayList<String> fromToList = auto[from][to];
+				if (fromToList.size() > 0){
+					String fromToRegex = fromToList.get(0);
+					newEdgeRegex = union(newEdgeRegex, fromToRegex);
+					fromToList.clear();
+				}
+				
+				fromToList.add(newEdgeRegex);
+			}
+		}
+		
+		for (int i=0; i<num_states; i++){
+			auto[i][state].clear();
+			auto[state][i].clear();
+		}
+	}
+	
+	public String getRegex(){
+		//CHAMAR FUNCAO DE REMOVER OS EPS!
+		generateUnionEdges();
+		
+		for (int i=0; i<num_states; i++){
+			if (i != startState && !finalStates.contains(i)){
+				removeState(i);
+				print();
+				System.out.println("");
+			}
+		}
+		
+		return "";
+	}
+	
+	public void print(){
+		for (int i=0; i<num_states; i++){
+			System.out.print(i + ":");
+			for (int j=0; j<num_states; j++){
+				if (auto[i][j].size() == 0) continue;
+				
+				System.out.print(" " + j + "[");
+				for (String s : auto[i][j])
+					System.out.print(s + "-");
+				System.out.print("]");
+			}
+			
+			System.out.println("");
+		}
 	}
 	
 }
