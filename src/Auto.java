@@ -587,9 +587,9 @@ public class Auto {
 	}
 	
 	private String concat (String s1, String s2){
-		if (s1.length() == 0)
+		if (s1.length() == 0 || s1.equals("&"))
 			return s2;
-		if (s2.length() == 0)
+		if (s2.length() == 0 || s2.equals("&"))
 			return s1;
 		
 		int inParenthesis = 0;
@@ -608,13 +608,13 @@ public class Auto {
 		
 		inParenthesis = 0;
 		
-		for (int i=0; i<s1.length(); i++){
-			if (s1.charAt(i) == '(')
+		for (int i=0; i<s2.length(); i++){
+			if (s2.charAt(i) == '(')
 				inParenthesis++;
-			else if (s1.charAt(i) == ')')
+			else if (s2.charAt(i) == ')')
 				inParenthesis--;
 			
-			if (s1.charAt(i) == '+' && inParenthesis == 0){
+			if (s2.charAt(i) == '+' && inParenthesis == 0){
 				s2 = "(" + s2 + ")";
 				break;
 			}
@@ -624,7 +624,7 @@ public class Auto {
 	}
 	
 	private String kleene (String s){
-		if (s.length() == 0)
+		if (s.length() == 0 || s.equals("&"))
 			return s;
 		
 		if (s.length() > 1)
@@ -734,7 +734,8 @@ public class Auto {
 		else
 			kleeneLoop = "";
 		
-		return concat(inLoop, kleeneLoop);
+		String regex = concat(inLoop, kleeneLoop); 
+		return regex;
 	}
 	
 	//DEBUG ----------------------------------------------

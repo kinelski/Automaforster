@@ -261,5 +261,83 @@ public class AutoTest {
 		assertFalse(set.contains(5));
 		assertFalse(set.contains(6));
 	}
+	
+	//TESTES ITEM 4 -----------------------------
+	
+	@Test
+	public void item4ex1(){
+		auto.setNumOfStates(7);
+		
+		auto.addEdge(0, 3, "&");
+		auto.addEdge(3, 3, "a");
+		auto.addEdge(3, 3, "b");
+		auto.addEdge(3, 2, "&");
+		auto.addEdge(2, 4, "b");
+		auto.addEdge(4, 5, "b");
+		auto.addEdge(5, 6, "&");
+		auto.addEdge(6, 6, "a");
+		auto.addEdge(6, 6, "b");
+		auto.addEdge(6, 1, "&");
+		
+		auto.setStartState(0);
+		auto.addFinalState(1);
+		
+		System.out.println("Regex 1: " + auto.getRegex());
+	}
+	
+	@Test
+	public void item4ex2(){
+		auto.setNumOfStates(4);
+		
+		auto.addEdge(0, 2, "&");
+		auto.addEdge(2, 1, "&");
+		auto.addEdge(2, 3, "a");
+		auto.addEdge(3, 2, "b");
+		auto.addEdge(3, 2, "c");
+		
+		auto.setStartState(0);
+		auto.addFinalState(1);
+		
+		System.out.println("Regex 2: " + auto.getRegex());
+	}
+	
+	@Test
+	public void item4ex3(){
+		auto.setNumOfStates(6);
+		
+		auto.addEdge(0, 4, "&");
+		auto.addEdge(0, 5, "&");
+		auto.addEdge(4, 4, "a");
+		auto.addEdge(5, 5, "b");
+		auto.addEdge(4, 2, "&");
+		auto.addEdge(5, 3, "&");
+		auto.addEdge(2, 1, "b");
+		auto.addEdge(3, 1, "a");
+		
+		auto.setStartState(0);
+		auto.addFinalState(1);
+		
+		System.out.println("Regex 3: " + auto.getRegex());
+	}
+	
+	@Test
+	public void item4ex4(){
+		auto.setNumOfStates(7);
+		
+		auto.addEdge(0, 3, "&");
+		auto.addEdge(3, 3, "a");
+		auto.addEdge(3, 2, "&");
+		auto.addEdge(2, 5, "&");
+		auto.addEdge(5, 5, "b");
+		auto.addEdge(5, 4, "&");
+		auto.addEdge(4, 6, "&");
+		auto.addEdge(6, 6, "c");
+		auto.addEdge(6, 1, "&");
+		
+		auto.setStartState(0);
+		auto.addFinalState(1);
+		
+		System.out.println("Regex 4: " + auto.getRegex());
+	}
 
 }
