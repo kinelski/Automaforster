@@ -48,12 +48,6 @@ public class Auto {
 		
 		vertexIni = new Stack<Integer>();
 		vertex = new Stack<Integer>();
-		
-		//TESTES
-		num_states = 4;
-		startState = 0;
-		finalStates.add(3);
-		//------
 	}
 	
 	public void addEdge (int s1, int s2, String w){
@@ -456,9 +450,6 @@ public class Auto {
 	}
 	
 	public boolean getOutput (String chain, Set<Integer> statesSet){
-		if (!onlySymbol)
-			return false;
-		
 		boolean[][] epsFlag = new boolean[num_states][chain.length()+1];
 		for (int i=0; i<num_states; i++)
 			for (int j=0; j<chain.length(); j++)
@@ -569,24 +560,55 @@ public class Auto {
 	//ITEM 4 ----------------------------------------------
 	
 	private String union (String s1, String s2){
-		if (s1.length() > 1)
-			s1 = "(" + s1 + ")";
-		if (s2.length() > 1)
-			s2 = "(" + s2 + ")";
+		if (s1.length() == 0)
+			return s2;
+		if (s2.length() == 0)
+			return s1;
 		
 		return s1 + "+" + s2;
 	}
 	
 	private String concat (String s1, String s2){
-		if (s1.length() > 1)
-			s1 = "(" + s1 + ")";
-		if (s2.length() > 1)
-			s2 = "(" + s2 + ")";
+		if (s1.length() == 0)
+			return s2;
+		if (s2.length() == 0)
+			return s1;
+		
+		int inParenthesis = 0;
+		
+		for (int i=0; i<s1.length(); i++){
+			if (s1.charAt(i) == '(')
+				inParenthesis++;
+			else if (s1.charAt(i) == ')')
+				inParenthesis--;
+			
+			if (s1.charAt(i) == '+' && inParenthesis == 0){
+				s1 = "(" + s1 + ")";
+				break;
+			}
+		}
+		
+		inParenthesis = 0;
+		
+		for (int i=0; i<s1.length(); i++){
+			if (s1.charAt(i) == '(')
+				inParenthesis++;
+			else if (s1.charAt(i) == ')')
+				inParenthesis--;
+			
+			if (s1.charAt(i) == '+' && inParenthesis == 0){
+				s2 = "(" + s2 + ")";
+				break;
+			}
+		}
 		
 		return s1 + s2;
 	}
 	
 	private String kleene (String s){
+		if (s.length() == 0)
+			return s;
+		
 		if (s.length() > 1)
 			s = "(" + s + ")";
 		
@@ -656,18 +678,45 @@ public class Auto {
 	}
 	
 	public String getRegex(){
-		//CHAMAR FUNCAO DE REMOVER OS EPS!
+		if (finalStates.size() != 1)
+			return "";
+		
+		int finalState = -1;
+		
 		generateUnionEdges();
 		
 		for (int i=0; i<num_states; i++){
-			if (i != startState && !finalStates.contains(i)){
+			if (i != startState && !finalStates.contains(i))
 				removeState(i);
-				print();
-				System.out.println("");
-			}
+			
+			if (finalStates.contains(i))
+				finalState = i;
 		}
 		
-		return "";
+		String startSelfLoop = "", finalSelfLoop = "";
+		String startToFinal = "", finalToStart = "";
+		
+		if (!auto[startState][startState].isEmpty())
+			startSelfLoop = kleene(auto[startState][startState].get(0));
+		if (!auto[finalState][finalState].isEmpty())
+			finalSelfLoop = kleene(auto[finalState][finalState].get(0));
+		if (!auto[startState][finalState].isEmpty())
+			startToFinal = auto[startState][finalState].get(0);
+		if (!auto[finalState][startState].isEmpty())
+			finalToStart = auto[finalState][startState].get(0);
+		
+		if (startToFinal == "")
+			return "";
+		
+		String inLoop = concat( concat(startSelfLoop, startToFinal), finalSelfLoop );
+		String kleeneLoop;
+		
+		if (!finalToStart.isEmpty())
+			kleeneLoop = kleene( concat(finalToStart, inLoop) );
+		else
+			kleeneLoop = "";
+		
+		return concat(inLoop, kleeneLoop);
 	}
 	
 	//DEBUG ----------------------------------------------
