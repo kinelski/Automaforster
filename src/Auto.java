@@ -7,7 +7,6 @@ import java.util.TreeSet;
 public class Auto {
 	
 	final int MAX_STATE = 100;
-	
 
 	final String FILE = "C:\\Users\\Ana Cuder\\workspace\\AutomaForster\\DFAGraph.txt";
 	private String graph;
@@ -81,6 +80,22 @@ public class Auto {
 			}
 			auto[from][i] = new ArrayList<String>();
 		}
+	}
+	
+	public void setStartState (int state){
+		startState = state;
+	}
+	
+	public void addFinalState (int state){
+		finalStates.add(state);
+	}
+	
+	public void clearFinalStates(){
+		finalStates.clear();
+	}
+	
+	public void setNumOfStates (int num){
+		num_states = num;
 	}
 	
 	//ITEM 1 ----------------------------------------------
@@ -451,6 +466,9 @@ public class Auto {
 	
 	public boolean getOutput (String chain, Set<Integer> statesSet){
 		boolean[][] epsFlag = new boolean[num_states][chain.length()+1];
+		
+		statesSet.clear();
+		
 		for (int i=0; i<num_states; i++)
 			for (int j=0; j<chain.length(); j++)
 				epsFlag[i][j] = false;
